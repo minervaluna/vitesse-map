@@ -1,56 +1,48 @@
 <script setup lang="ts">
-defineOptions({
-  name: 'IndexPage',
-})
-const user = useUserStore()
-const name = ref(user.savedName)
+import AMapLoader from '@amap/amap-jsapi-loader'
+import { onMounted, onUnmounted } from 'vue'
 
-const router = useRouter()
-function go() {
-  if (name.value)
-    router.push(`/hi/${encodeURIComponent(name.value)}`)
+const vars = {
+  center: {
+    lnt: 121.551787,
+    lat: 31.318956,
+  },
+  zoom: 14,
 }
 
-const { t } = useI18n()
+const map = ref<any>()
+const mapRef = ref<HTMLDivElement>()
+
+function renderMap() {
+  AMapLoader.load({
+    key: 'a01f05bd8b80ca883a806344808b8e07', // 申请好的Web端开发者Key，首次调用 load 时必填
+    version: '2.0', // 指定要加载的 JSAPI 的版本，缺省时默认为 1.4.15
+    plugins: ['AMap.Scale', 'AMap.ToolBar', 'AMap.MouseTool'], // 需要使用的的插件列表，如比例尺'AMap.Scale'等
+    Loca: {
+      version: '2.0.0',
+    },
+  })
+    .then((AMap) => {
+      map.value = new AMap.Map(mapRef.value, {
+        center: [vars.center.lnt, vars.center.lat],
+        zoom: vars.zoom, // 初始化地图级别
+      })
+      map.value.setFitView()
+    })
+    .catch((_e) => {
+    // error...
+    })
+}
+
+onMounted(() => {
+  renderMap()
+})
+
+onUnmounted(() => {
+  map.value?.destroy()
+})
 </script>
 
 <template>
-  <div>
-    <div text-4xl>
-      <div i-carbon-campsite inline-block />
-    </div>
-    <p>
-      <a rel="noreferrer" href="https://github.com/antfu/vitesse" target="_blank">
-        Vitesse
-      </a>
-    </p>
-    <p>
-      <em text-sm opacity-75>{{ t('intro.desc') }}</em>
-    </p>
-
-    <div py-4 />
-
-    <TheInput
-      v-model="name"
-      :placeholder="t('intro.whats-your-name')"
-      autocomplete="false"
-      @keydown.enter="go"
-    />
-    <label class="hidden" for="input">{{ t('intro.whats-your-name') }}</label>
-
-    <div>
-      <button
-        m-3 text-sm btn
-        :disabled="!name"
-        @click="go"
-      >
-        {{ t('button.go') }}
-      </button>
-    </div>
-  </div>
+  <div ref="mapRef" h-full w-full />
 </template>
-
-<route lang="yaml">
-meta:
-  layout: home
-</route>
